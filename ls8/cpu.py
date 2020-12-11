@@ -2,6 +2,11 @@
 
 import sys
 
+HLT = 0b00000001
+LDI = 0b10000010
+PRN = 0b01000111
+MUL = 0b10100010
+
 class CPU:
     """Main CPU class."""
 
@@ -13,33 +18,30 @@ class CPU:
         self.ram = [0] * 256
         self.halted = False
 
-    def load(self):
+    def load(self, filename):
         """Load a program into memory."""
 
         address = 0
-
-        # For now, we've just hardcoded a program:
-
-        program = [
-            # From print8.ls8
-            0b10000010, # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111, # PRN R0
-            0b00000000,
-            0b00000001, # HLT
-        ]
-
-        for instruction in program:
-            self.ram[address] = instruction
-            address += 1
-
+        # open the file
+        with open(filename) as my_file:
+            # go through each line to parse and get 
+            # the instruction
+            for line in my_file:
+                # try and get the instruction/operand in the line
+                comment_split = line.split('#')
+                maybe_binary_number = comment_split[0]
+                try:
+                    x = int(maybe_binary_number, 2)
+                    self.ram_write(x, address)
+                    address += 1
+                except:
+                    continue
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
 
-        if op == "ADD":
-            self.reg[reg_a] += self.reg[reg_b]
+        if op == MUL:
+            self.registers[reg_a] *= self.registers[reg_b]
         #elif op == "SUB": etc
         else:
             raise Exception("Unsupported ALU operation")
@@ -72,4 +74,24 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        pass
+        while not self.halted:
+            instruction_to_execute = self.ram_read(self.pc)
+            operand_a = self.ram_read(self.pc + 1)
+            operand_b = self.ram_read(self.pc + 2)
+            self.execute_instruction(instruction_to_execute, operand_a, operand_b)
+    
+    def execute_instruction(self, instruction, operand_a, operand_b):
+        if instruction == HLT:
+            self.halted = True
+            self.pc += 1
+        elif instruction == PRN:
+            print(self.registers[operand_a])
+            self.pc += 2
+        elif instruction == LDI:
+            self.registers[operand_a] = operand_b
+            self.pc += 3
+        elif instruction == MUL:
+            self.alu(instruction, operand_a, operand_b)
+            self.pc += 3
+        else:
+            print("Don't know what to do.")
