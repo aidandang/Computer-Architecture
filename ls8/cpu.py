@@ -6,6 +6,11 @@ HLT = 0b00000001
 LDI = 0b10000010
 PRN = 0b01000111
 MUL = 0b10100010
+POP = 0b01000110
+
+PUSH = 0b01000101
+
+SP = 7
 
 class CPU:
     """Main CPU class."""
@@ -93,5 +98,15 @@ class CPU:
         elif instruction == MUL:
             self.alu(instruction, operand_a, operand_b)
             self.pc += 3
+        elif instruction == PUSH:
+            # decrement the stack pointer
+            self.registers[SP] -= 1
+            # store the operand in stack
+            self.ram_write(self.registers[operand_a], self.registers[SP])
+            self.pc += 2
+        elif instruction == POP:
+            self.registers[operand_a] = self.ram_read(self.registers[SP])
+            self.registers[SP] += 1
+            self.pc += 2
         else:
             print("Don't know what to do.")
