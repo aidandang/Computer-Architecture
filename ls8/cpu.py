@@ -7,8 +7,11 @@ LDI = 0b10000010
 PRN = 0b01000111
 MUL = 0b10100010
 POP = 0b01000110
+RET = 0b00010001
+ADD = 0b10100000
 
 PUSH = 0b01000101
+CALL = 0b01010000
 
 SP = 7
 
@@ -47,6 +50,9 @@ class CPU:
 
         if op == MUL:
             self.registers[reg_a] *= self.registers[reg_b]
+        elif op == ADD:
+            self.registers[reg_a] += self.registers[reg_b]
+
         #elif op == "SUB": etc
         else:
             raise Exception("Unsupported ALU operation")
@@ -98,6 +104,9 @@ class CPU:
         elif instruction == MUL:
             self.alu(instruction, operand_a, operand_b)
             self.pc += 3
+        elif instruction == ADD:
+            self.alu(instruction, operand_a, operand_b)
+            self.pc += 3
         elif instruction == PUSH:
             # decrement the stack pointer
             self.registers[SP] -= 1
@@ -108,5 +117,16 @@ class CPU:
             self.registers[operand_a] = self.ram_read(self.registers[SP])
             self.registers[SP] += 1
             self.pc += 2
+        elif instruction == CALL:
+            next_instruction_address = self.pc + 2
+            self.registers[SP] -= 1
+            self.ram_write(next_instruction_address, self.registers[SP])
+            register = self.ram_read(self.pc + 1)
+            address = self.registers[register]
+            self.pc = address
+        elif instruction == RET:
+            ret_address = self.registers[SP]
+            self.pc = self.ram_read(ret_address)
+            self.registers[SP] += 1
         else:
             print("Don't know what to do.")
